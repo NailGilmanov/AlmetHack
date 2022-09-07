@@ -3,10 +3,12 @@ from data import db_session
 from waitress import serve
 
 from forms.user import RegisterForm, LoginForm
+from forms.events import EventsForm
 
 from data.users import User
+from data.events import Events
 
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret_key'
@@ -41,6 +43,25 @@ def login():
 def logout():
     logout_user()
     return redirect("/")
+
+
+@app.route("/new_event", methods=['GET', 'POST'])
+def new_event():
+    form = EventsForm()
+    session = db_session.create_session()
+    if form.validate_on_submit():
+        event = Events()
+        event.title = form.title.data
+        event.content = form.content.data
+        event.is_private = form.is_private.data
+        event.place = form.place.data
+        event.date_and_time = form.date_and_time.data
+        current_user.events.append(event)
+        session.merge(current_user)
+        session.commit()
+        return redirect('/')
+    return render_template("new_event.html", title='Новое событие',
+                           form=form)
 
 
 @app.route('/success')
@@ -79,6 +100,7 @@ def index():
 
 def main():
     db_session.global_init('db/database.sqlite')
+    print("server just started on http://127.0.0.1:4000")
     serve(app, host='127.0.0.1', port=4000)
 
 
