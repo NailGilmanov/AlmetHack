@@ -2,13 +2,15 @@ from flask import Flask, render_template, redirect
 from data import db_session
 from waitress import serve
 
+from sqlalchemy import select
+
 from forms.user import RegisterForm, LoginForm
 from forms.events import EventsForm
-# from forms.comments import CommentsForm
+from forms.comments import CommentsForm
 
 from data.users import User
 from data.events import Events
-# from data.comments import Comment
+from data.comments import Comment
 
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
@@ -103,26 +105,25 @@ def index():
     return render_template("index.html", events=events)
 
 
-# @app.route('/comments/<int:id>', methods=['GET', 'POST'])
-# @login_required
-# def comments(id):
-#     db_sess = db_session.create_session()
-#     comments = db_sess.query(Comment).filter(Comment.event_id == id
-#                                        ).all()
-#     event = db_sess.query(Events).filter(Events.id == id
-#                                        ).first()
-#     form = CommentsForm()
-#     if form.validate_on_submit():
-#         comment = Comment()
-#         comment.content = form.content.data
-#         # comment.event_id = id
-#         # comment.user_id = current_user.id
-#         db_sess.add(comment)
-#         db_sess.commit()
-#         return redirect(f'/comments/{id}')
-#     else:
-#         return render_template('comments.html', event=event, comments=comments, title='Обсуждение',
-#                                form=form)
+@app.route('/comments/<int:id>', methods=['GET', 'POST'])
+@login_required
+def comments(id):
+    db_sess = db_session.create_session()
+    comments = db_sess.query(User).filter(Comment.event_id == id).all()
+    print(comments)
+    event = db_sess.query(Events).filter(Events.id == id).first()
+    form = CommentsForm()
+    if form.validate_on_submit():
+        comment = Comment()
+        comment.content = form.content.data
+        comment.event_id = id
+        comment.user_id = current_user.id
+        db_sess.add(comment)
+        db_sess.commit()
+        return redirect(f'/comments/{id}')
+    else:
+        return render_template('comments.html', event=event, comments=comments, title='Обсуждение',
+                               form=form)
 
 
 def main():
