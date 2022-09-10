@@ -1,7 +1,20 @@
 {% extends "base.html" %}
 
 {% block content %}
-<body>
-    <div id="map" style="width: 100%; height: 95vh"></div>
-</body>
+    {% for item in events%}
+        <div class="post col-md6 border rounded">
+            <div>
+                <b>{{item.user.name}}</b> <i class="secondary fw-light">{{item.created_date.date()}}</i>
+            </div>
+            <h2>{{item.title}}</h2>
+            <div>
+                {{item.content}}
+            </div><hr>
+            {% if current_user.is_authenticated %}
+                <div class="message-div"><a href="/comments/{{ item.id }}">Комментарии</a></div>
+            {% else %}
+                <div class="message-div"><a href="/register">Комментарии</a></div>
+            {% endif %}
+        </div><br><br><br><br>
+    {% endfor %}
 {% endblock %}
