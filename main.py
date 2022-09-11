@@ -64,7 +64,7 @@ def valid_login_data(username, password):
     return render_template_string('false')
 
 
-@app.route("/new_event/<string:title>/<string:content>/<string:date>/<string:time>/<string:place>/<string:category>",
+@app.route("/new_event/<string:title>/<string:content>/<string:date>/<string:time>/<string:place>/<int:category>",
            methods=['GET', 'POST'])
 def new_event(title, content, date, time, place, category):
     session = db_session.create_session()
@@ -92,6 +92,7 @@ def get_user(id):
     about = f'"about":"{user.about}",'
     rate = f'"rate":"{str(user.rate)}"'
     return render_template_string("{" + id + name + about + rate + "}")
+
 
 def get_username(id):
     db_sess = db_session.create_session()
@@ -144,6 +145,15 @@ def get_comments(id):
     comments = db_sess.query(Comment).filter(Comment.event_id == id).all()
     response = [[get_username(comment.user_id), comment.content] for comment in comments]
     return render_template_string(str(response))
+
+
+@app.route('/add_rate/<int:user_id>/<int:rate>')
+def add_rate(user_id, rate):
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(User.id == user_id).first()
+    user.rate += rate
+    db_sess.commit()
+    return render_template_string('true')
 
 
 def main():

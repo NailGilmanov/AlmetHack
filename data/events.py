@@ -16,7 +16,7 @@ class Events(SqlAlchemyBase, SerializerMixin):
     date = sqlalchemy.Column(sqlalchemy.String)
     time = sqlalchemy.Column(sqlalchemy.String)
     place = sqlalchemy.Column(sqlalchemy.String)
-    category = sqlalchemy.Column(sqlalchemy.String)
+    category = sqlalchemy.Column(sqlalchemy.Integer)
     is_private = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
 
     user_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("users.id"))
