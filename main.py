@@ -1,6 +1,7 @@
 from flask import Flask, render_template_string
 from data import db_session
 from waitress import serve
+from flask_cors import CORS, cross_origin
 
 
 from forms.user import RegisterForm, LoginForm
@@ -14,10 +15,20 @@ from data.comments import Comment
 from flask_login import LoginManager, login_user, current_user
 
 app = Flask(__name__)
+CORS(app)
 app.config['SECRET_KEY'] = 'secret_key'
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+
+def is_integer(n):
+    try:
+        float(n)
+    except ValueError:
+        return False
+    else:
+        return float(n).is_integer()
 
 
 @login_manager.user_loader
@@ -42,13 +53,14 @@ def valid_register_data(username, password, password_again, description):
     db_sess = db_session.create_session()
     user = User(
         name=username,
-        about=description
+        about=description,
+        booking=''
     )
     user.set_password(password)
     db_sess.add(user)
     db_sess.commit()
 
-    return render_template_string("true")
+    return render_template_string(str(user.id))
 
 
 @app.route('/login/<string:username>/<string:password>')
@@ -59,7 +71,7 @@ def valid_login_data(username, password):
     if user:
         if user.check_password(password):
             login_user(user)
-            return render_template_string('true')
+            return render_template_string(str(user.id))
         # Неправильный логин или пароль
     return render_template_string('false')
 
@@ -105,23 +117,24 @@ def get_user_events(id):
     db_sess = db_session.create_session()
     events = db_sess.query(Events).filter(Events.user_id == id).all()
     events_ids = [event.id for event in events]
-    return render_template_string(str(events_ids))
+    response = [get_event(i) for i in events_ids]
+    print(get_event(1))
+    return render_template_string(str(response))
 
 
-@app.route('/get_event/<int:id>')
 def get_event(id):
     db_sess = db_session.create_session()
     event = db_sess.query(Events).filter(Events.id == id).first()
-    id = f'"id":"{str(event.id)}",'
-    title = f'"title":"{event.title}",'
-    content = f'"content":"{event.content}",'
-    date = f'"date":"{event.date}",'
-    time = f'"time":"{event.time}",'
-    place = f'"place":"{event.place}",'
-    category = f'"category":"{event.category}",'
-    is_private = f'"is_private":"{event.is_private}",'
-    user_id = f'"user_id":"{event.user_id}"'
-    return render_template_string("{" + id + title + content + date + time + place + category + is_private + user_id + "}")
+    id = {"id": int(event.id)}
+    title = {"title":f"{event.title}"}
+    content = {"content":f"{event.content}"}
+    date = {"date":f"{event.date}"}
+    time = {"time":f"{event.time}"}
+    place = {"place":f"{event.place}"}
+    category = {"category": int(event.category)}
+    is_private = {"is_private": event.is_private}
+    user_id = {"user_id": int(event.user_id)}
+    return id | title | content | date | time | place | category | is_private | user_id
 
 
 @app.route("/new_comment/<int:event_id>/<int:user_id>/<string:content>",
@@ -154,6 +167,39 @@ def add_rate(user_id, rate):
     user.rate += rate
     db_sess.commit()
     return render_template_string('true')
+
+
+@app.route('/booking_event/<int:event_id>/<int:user_id>')
+def booking_event(event_id, user_id):
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(User.id == user_id).first()
+    user.booking = str(user.booking)
+    event_ids = [str(i) for i in user.booking if is_integer(i)]
+    event_ids.append(str(event_id))
+    user.booking = '[' + ', '.join(event_ids) + ']'
+    db_sess.commit()
+    return render_template_string('true')
+
+
+@app.route('/unbooking_event/<int:event_id>/<int:user_id>')
+def unbooking_event(event_id, user_id):
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(User.id == user_id).first()
+    user.booking = str(user.booking)
+    event_ids = [str(i) for i in user.booking if is_integer(i) and str(i) != str(event_id)]
+    user.booking = '[' + ', '.join(event_ids) + ']'
+    db_sess.commit()
+    return render_template_string('true')
+
+
+@cross_origin()
+@app.route('/get_booking_event/<int:user_id>')
+def get_booking_event(user_id):
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(User.id == user_id).first()
+    events = [get_event(i) for i in user.booking if is_integer(i)]
+    print(events)
+    return render_template_string(str(events))
 
 
 def main():

@@ -15,8 +15,9 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
                            primary_key=True, autoincrement=True)
     name = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     about = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    rate = sqlalchemy.Column(sqlalchemy.Integer, default=0)
+    rate = sqlalchemy.Column(sqlalchemy.Integer, default=100)
     hashed_password = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    booking = sqlalchemy.Column(sqlalchemy.String)
     events = orm.relation('Events', back_populates='user')
 
     # устанавливает значение хэша пароля для переданной строки, нужна для регистрации пользователя
